@@ -1,5 +1,8 @@
 /* Tab container to hold buttons */
 .tab {
+    display: flex;  /* Use flexbox for better control */
+    justify-content: flex-start;  /* Ensure buttons align to the left */
+    align-items: center;  /* Vertically center the buttons */
     overflow: hidden;
     border: 1px solid #ccc;
     background-color: #f1f1f1;
@@ -9,7 +12,7 @@
 /* Style for the links (acting as buttons) */
 .tab a.button {
     background-color: inherit;
-    display: inline-block;  /* Changed from float: left for better layout control */
+    display: inline-block;  /* Keep the inline-block display for buttons */
     border: 1px solid #ddd;
     outline: none;
     cursor: pointer;
