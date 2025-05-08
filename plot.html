@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV and Excel Data Plot</title>
+    <title>CSV, Excel, and Text Data Plot</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
@@ -253,11 +253,13 @@
             const selectedFile = fileInput.files[fileList.selectedIndex];
             const fileExtension = selectedFile.name.split('.').pop().toLowerCase();
             
-            // Handle CSV and Excel files
+            // Handle CSV, Excel, and Text files
             if (fileExtension === 'csv') {
                 processCSV(selectedFile);
             } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
                 processExcel(selectedFile);
+            } else if (fileExtension === 'txt') {
+                processText(selectedFile);
             } else {
                 alert('Unsupported file type');
             }
@@ -290,6 +292,21 @@
                 updateDropdowns();
             };
             reader.readAsBinaryString(file);
+        }
+
+        function processText(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const lines = e.target.result.split('\n').map(line => line.trim());
+                // Assuming space-separated values in the text file
+                if (lines.length > 0) {
+                    headers = lines[0].split(/\s+/).map(header => header.trim());
+                    data = lines.slice(1).map(line => line.split(/\s+/).map(cell => cell.trim()));
+
+                    updateDropdowns();
+                }
+            };
+            reader.readAsText(file);
         }
 
         function updateDropdowns() {
