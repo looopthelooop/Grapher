@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Data Plot</title>
+    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .left-side {
+            flex: 1;
+            margin-right: 20px;
+        }
+
+        .right-side {
+            flex: 4;
+            height: 400px;
+            padding: 20px;
+            width: 100%;
+            height: 100%;
+        }
+
+        #fileList, #headerList {
+            width: 100%;
+            height: 50%;
+            margin-bottom: 10px;
+        }
+
+        #openFileButton {
+            width: 100%;
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            margin-bottom: 10px;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="tab">
+        <a href="plot.html" class="button">Plot</a>
+    </div>
+
+    <div class="container">
+        <!-- Left: File Input Section -->
+        <div class="left-side">
+            <select id="fileList" size="5" multiple></select>
+
+            <button id="openFileButton">Open File</button>
+
+            <input type="file" id="fileInput" multiple style="display:none;">
+
+            <div>
+                <label for="xAxis">Choose X Axis:</label>
+                <select id="xAxis"></select>
+            </div>
+
+            <div>
+                <label for="yAxis">Choose Y Axis:</label>
+                <select id="yAxis"></select>
+            </div>
+
+            <button id="plotButton">Plot</button>
+        </div>
+
+        <!-- Right: Graph Container (Plotly Graph) -->
+        <div class="right-side">
+            <div id="graph"></div>
+        </div>
+    </div>
+
+    <script>
+        const openFileButton = document.getElementById('openFileButton');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const xAxisDropdown = document.getElementById('xAxis');
+        const yAxisDropdown = document.getElementById('yAxis');
+        const plotButton = document.getElementById('plotButton');
+        let headers = [];
+        let data = [];
+
+        openFileButton.addEventListener('click', function() {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', function(event) {
+            const files = event.target.files;
+            fileList.innerHTML = '';
+
+            for (let i = 0; i < files.length; i++) {
+                const option = document.createElement('option');
+                option.textContent = files[i].name;
+                fileList.appendChild(option);
+            }
+        });
+
+        fileList.addEventListener('change', function() {
+            const selectedFileIndex = fileList.selectedIndex;
+
+            if (selectedFileIndex >= 0) {
+                const selectedFile = fileInput.files[selectedFileIndex];
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    const content = e.target.result;
+                    const lines = content.split('\n');
+
+                    if (lines.length > 0) {
+                        headers = lines[0].split(',');
+                        data = lines.slice(1).map(line => line.split(','));
+
+                        // Populate the dropdowns with headers
+                        xAxisDropdown.innerHTML = '';
+                        yAxisDropdown.innerHTML = '';
+                        
+                        headers.forEach(header => {
+                            const xOption = document.createElement('option');
+                            xOption.textContent = header;
+                            xAxisDropdown.appendChild(xOption);
+
+                            const yOption = document.createElement('option');
+                            yOption.textContent = header;
+                            yAxisDropdown.appendChild(yOption);
+                        });
+                    }
+                };
+
+                // Read the selected file as text
+                reader.readAsText(selectedFile);
+            }
+        });
+
+        plotButton.addEventListener('click', function() {
+            const xIndex = xAxisDropdown.selectedIndex;
+            const yIndex = yAxisDropdown.selectedIndex;
+
+            if (xIndex >= 0 && yIndex >= 0) {
+                // Extract the selected data for plotting
+                const xData = data.map(row => row[xIndex]);
+                const yData = data.map(row => row[yIndex]);
+
+                // Create a Plotly plot
+                const trace = {
+                    x: xData,
+                    y: yData,
+                    mode: 'lines',
+                    type: 'scatter',
+                    name: 'Data from CSV'
+                };
+
+                const layout = {
+                    title: 'CSV Data Plot',
+                    xaxis: { title: headers[xIndex] },
+                    yaxis: { title: headers[yIndex] }
+                };
+
+                Plotly.newPlot('graph', [trace], layout);
+            }
+        });
+    </script>
+
+</body>
+</html>
