@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV Data Plot</title>
+    <title>CSV and Excel Data Plot</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
     <style>
         .tab {
             text-align: center;
@@ -250,27 +251,57 @@
 
         fileList.addEventListener('change', () => {
             const selectedFile = fileInput.files[fileList.selectedIndex];
-            if (selectedFile) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const lines = e.target.result.split('\n').map(line => line.trim());
-                    if (lines.length > 0) {
-                        headers = lines[0].split(',').map(header => header.trim());
-                        data = lines.slice(1).map(line => line.split(',').map(cell => cell.trim()));
-
-                        xAxisDropdown.innerHTML = `<option value="Index">Index</option>`;
-                        headers.forEach(header => {
-                            xAxisDropdown.innerHTML += `<option value="${header}">${header}</option>`;
-                        });
-
-                        yAxisDropdown.innerHTML = headers.map(header => 
-                            `<option value="${header}">${header}</option>`
-                        ).join('');
-                    }
-                };
-                reader.readAsText(selectedFile);
+            const fileExtension = selectedFile.name.split('.').pop().toLowerCase();
+            
+            // Handle CSV and Excel files
+            if (fileExtension === 'csv') {
+                processCSV(selectedFile);
+            } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+                processExcel(selectedFile);
+            } else {
+                alert('Unsupported file type');
             }
         });
+
+        function processCSV(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const lines = e.target.result.split('\n').map(line => line.trim());
+                if (lines.length > 0) {
+                    headers = lines[0].split(',').map(header => header.trim());
+                    data = lines.slice(1).map(line => line.split(',').map(cell => cell.trim()));
+
+                    updateDropdowns();
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function processExcel(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const wb = XLSX.read(e.target.result, { type: 'binary' });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+                headers = rows[0];
+                data = rows.slice(1);
+
+                updateDropdowns();
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        function updateDropdowns() {
+            xAxisDropdown.innerHTML = `<option value="Index">Index</option>`;
+            headers.forEach(header => {
+                xAxisDropdown.innerHTML += `<option value="${header}">${header}</option>`;
+            });
+
+            yAxisDropdown.innerHTML = headers.map(header => 
+                `<option value="${header}">${header}</option>`
+            ).join('');
+        }
 
         addButton.addEventListener('click', () => {
             const xSelection = xAxisDropdown.value;
@@ -297,7 +328,6 @@
             option.textContent = name;
             subplotsList.appendChild(option);
 
-            // Update the graph with the new data
             Plotly.react('graph', plotData, plotLayout);
         });
 
@@ -321,12 +351,10 @@
             Plotly.react('graph', plotData, plotLayout);
         });
 
-        // Toggle form visibility when Change Titles button is clicked
         changeTitlesButton.addEventListener('click', () => {
             formContainer.style.display = formContainer.style.display === 'block' ? 'none' : 'block';
         });
 
-        // Submit form to update title and axis labels
         submitTitleForm.addEventListener('click', function() {
             const newTitle = document.getElementById('titleInput').value;
             const newXAxis = document.getElementById('xAxisInput').value;
@@ -337,12 +365,9 @@
             if (newYAxis) plotLayout.yaxis.title.text = newYAxis;
 
             Plotly.react('graph', plotData, plotLayout);
-
-            // Hide the form after submitting
             formContainer.style.display = 'none';
         });
 
-        // Double-click event listener for renaming data series
         subplotsList.addEventListener('dblclick', (event) => {
             if (event.target.tagName === 'OPTION') {
                 const newName = prompt("Enter a new name for the data series:");
